@@ -2,8 +2,17 @@ import { env } from '@/config'
 import createHttpError from 'http-errors'
 import { JSDOM } from 'jsdom'
 import { compact, last, sortBy } from 'lodash'
+import { MetadataRoute } from 'next'
 
-async function fetchIcon(url: string) {
+export async function fetchManifest(url: URL): Promise<MetadataRoute.Manifest> {
+  const response = await fetch(url, { method: 'GET' })
+  if (!response.ok) {
+    throw createHttpError(response.status)
+  }
+  return response.json()
+}
+
+async function fetchIcon(url: URL) {
   const response = await fetch(url, { method: 'GET' })
   if (!response.ok) {
     throw createHttpError(response.status)
@@ -22,7 +31,7 @@ async function fetchIcon(url: string) {
   }
 }
 
-export const diffIcon = async (icons: string[]) => {
+export const diffIcon = async (icons: URL[]) => {
   const iconData = await Promise.allSettled(icons.map(fetchIcon))
     .then(iconData =>
       iconData.map(i => {
@@ -84,7 +93,6 @@ export async function parseHtml(htmlStr: string) {
   const title = document.title
   const metaDescription = document.querySelector('meta[name="description"]')
   const description = metaDescription?.getAttribute('content') ?? ''
-
   const iconTags = ['link[rel="icon"]', 'link[rel="shortcut icon"]']
   const icons = iconTags
     .map(tag => document.querySelectorAll<HTMLLinkElement>(tag))
@@ -92,9 +100,12 @@ export async function parseHtml(htmlStr: string) {
     .flat()
     .map(i => i.href)
 
+  const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
+
   return {
     title,
     description,
     icons,
+    manifest: manifest?.href,
   }
 }

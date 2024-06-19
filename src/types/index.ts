@@ -1,16 +1,9 @@
 import { parseUrl } from '@/utils/url'
+import { MetadataRoute } from 'next'
 import { z } from 'zod'
 
-function isUrl(val: string) {
-  try {
-    return z.string().url().safeParse(parseUrl(val).href).success
-  } catch {
-    return false
-  }
-}
-
 export const urlInput = z.object({
-  url: z.string().trim().refine(isUrl).transform(parseUrl),
+  url: z.string().trim().transform(parseUrl),
 })
 
 export type UrlInput = z.infer<typeof urlInput>
@@ -23,4 +16,12 @@ export const urlSchema = z.object({
   icon: z.string().url().optional().nullable(),
 })
 
-export type Url = z.infer<typeof urlSchema>
+export type Url = {
+  id: string
+  url: string
+  title: string
+  description?: string
+  icon?: string
+  manifest?: MetadataRoute.Manifest
+  ip?: string
+}
